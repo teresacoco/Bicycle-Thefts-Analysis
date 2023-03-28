@@ -1,0 +1,259 @@
+---
+title: "How Bike Speed and Occasion Types affect the Reaction Time in Bicycle Theft"
+author: "Jingyu Liu - 1005735448"
+subtitle: Assignment 2
+output:
+  pdf_document: default
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+
+# Introduction
+
+The introduction includes background, importance, research question, terminology, hypothesis 5 sections.
+
+## Background
+Cycling as one of the most popular exercise during COVID-19 pandemic and as a eco-friendly travel type in bikes, it triggers the bike boom of 2020. No matter it is a new bike, used bike, their prices are increasing everyday, but the cyclists are riding more frequently than before. However, as more bikes hit the streets, the amount of bike theft has also gone up. There has been about a 30 per cent increase in bike theft during the COVID-19 pandemic. Project 529 estimates that only 15-20 per cent of stolen bikes are reported to the police. Because most of the crimes are under-reported, the government are not currently aware of how large the effect of bike theft problem and how many people are affected by the cases(Lily,H.G., 2020). 
+
+## Importance 
+
+If we find out what is the aspects that will influence the reaction time of people when they are in different occasions, then people will increase their awareness on the precautions of bicycle parking, and the rate of bicycle thefts will be reduced. And after reading our report, the police will pay more attention on the bicycle thefts, they will enhance the police force in the occasion like commercial spaces and the speed of investigation will be increased.
+
+## Research Question
+
+We want to investigate the relationship between bicycle speed and the reaction time of people when the bicycle thefts occurred in different occasions: inside of the commercial places or outside of it, as well as their linear relationship and the linear regression model. 
+
+## Terminology
+
+-P-value: In hypothesis test, the p-value is the probability of obtaining test results at least as extreme as the results, if assume the null hypothesis is correct(Aschwanden, C, 2015).\
+
+-Multiple linear regression model: is a statistical technique that uses some explanatory variables to predict the result of a response variable. It is an extension of linear regression model that used only one explanatory variable(Adam, H., 2021).\
+
+-Hypothesis test: Hypothesis test  is a way for you to test if the results of a experiment have meaningful results. You’re basically testing whether your results are valid by figuring out the probability that your result happened(Good, P.,2000).
+
+## Hypothesis
+
+The relationship between the speed of bike and the reaction time of bicycle theft is a linear relationship, it will be affected by the occasion of bicycle theft: inside of the commercial places or outside of it. The reaction time of bike theft will increase with the increasing of bike speed.
+
+# Data
+
+## Data description
+We will use the data of bicycle theft in April, 2019 that is collected from the website Open Data Toronto. The dataset is published by Toronto Police Services, the original dataset includes the data from 2014 to 2020, it is last refreshed on Mar.23th, 2021. It has 33 variables, with the variables of bicycle theft occurrence time, report time, occurrence place, price of stolen bicycle and so forth.
+
+## Data Collection and Data Cleaning Process
+
+I collect the dataset from the website https://open.toronto.ca/dataset/bicycle-thefts/.
+The drawback of the dataset is that it does not include time difference between report time of theft and occurrence time of theft, so it requires to be calculated in data cleaning. \
+Firstly, I removed all the missing values from the original dataset. The purpose of doing this is to remove useless values from original dataset. Then I kept the data of bicycle theft which occurred in April, 2019. Since the original dataset contains the cases of bicycle theft from 2014 to 2020, which is a long time, so we only need to investigate the data in recent years, I pick the data in April, 2019 for analyzing. As mentioned in data collection, the data set didn't include some variables that is useful for our analyzing, since both of occurred time and reported time are discrete variable, I created a continuous variable that calculate the time range between them. Also, the classification of premises type is too broad, and we only need to investigate the theft that happened in commercial places, so I reorganize the variable of premises type and set it in 2 categories: commercial place and outside. The reason of these 2 steps is we need at least 3 variables to create a linear regression model, I use the speed of bike and new premise types as the independent variables, with the premise types as categorical variable, and time range will be used as the dependent variable.\
+
+```{r, include = FALSE}
+library(dplyr)
+library(magrittr)
+library(tibble)
+library(ggplot2)
+
+# data cleaning
+b=read.csv('/Users/teresa/Desktop/bicycle-thefts.csv')
+b1=na.omit(b)
+b2=b1[b1$Occurrence_Year==2019,]
+b3=b2[b2$Occurrence_Month=='April',]
+b3$Time=b3$Report_Hour-b3$Occurrence_Hour
+b3$Place1=ifelse(b3$Premises_Type=="Commercial",'Commercial','Outside')
+final=b3[,c(6,7,11,24,28,34,35)]
+final
+
+```
+
+## Important Variables
+Variables | Description |
+----------|-------------|
+Occurrence_Hour | Hour theft occurred |
+Premises_Type | Premises type of occurrence |
+Bike_Speed | The speed of bicycle |
+Time | How long it took to find out the bicycle was stolen|
+Place1 | The theft occurred outside of the commercial place | 
+\newpage
+
+```{r,include=FALSE}
+
+# Use this to calculate some summary measures. 
+summary
+summary(final)
+sd(b3$Time)
+sd(b3$Bike_Speed)
+```
+
+## Numerical summaries
+Numerical Summaries | Min | Median | Mean | s.d . | Max |
+------------------- | --- |------- | ---- | --- | --- |
+ Time | -22.0000 | 1.0000 | 0.7637 | 7.920475 | 23.0000 |
+Bike_Speed | 0.00 | 11.00 | 12.42 | 9.283819 | 50.00 |
+
+The table above shows the numerical summaries of the time range and bike speed of bicycle theft. The mean of time range is 0.7637 hour. Compared to the median that is 1 hour, there are 14 minutes difference between them, and the time gap is very close. From the table we know that the maximum number of time range is 23 hours, while the minimum of it is -22 hours. It makes sense that the mean is far from the median value. The standard deviation of time range is 7.920475, which means the data of time range are clustered around the mean. Overall, we can conclude that most of the people find out there bike was stolen after an hour.\
+The mean of bike speed is 12.42 mph. It's a little different from the median value, which is 11 mph. As we can see from the table, the maximum number of bike speed is 50 mph. It makes sense that the mean is a little far from the median value. The standard deviation of bike speed is 9.2838 mph, so the data is more spread out. Therefore, we can find out that most of the stolen bike reach the speed of 11 mph when riding.\
+
+```{r,echo=FALSE}
+ggplot(data=final)+aes(x=Time)+geom_histogram(bins=30,fill="purple",colour="black")
+```
+From the histogram of the variable Time, we could see that most of the value cluster around 1. At the point of minimum and maximum value, which is -22 and 23, there is no extreme value, this is because we used the uniform distribution to generate the simulation of the value of Time. So the histogram of the Time is evenly distributed.
+```{r,echo=FALSE}
+ggplot(data=final, aes(x="",y=Bike_Speed))+geom_boxplot()
+```
+This is a boxplot of bike speed of stolen bike in the bike thefts.\
+The shape of this boxplot is right-skewed and the center of the boxplot is around 12 mile per hour. \
+The spread of the boxplot is the IQR of the boxplot, which is about 18 mile per hour. Also, the boxplot has outliers, and the outliers are larger than 48 mile per hour. \
+From the boxplot, the information we can get is most stolen bicycles can reach the speed of 12 mile per hour, but there are some bicycle which could reach 48 miles per hour when cycling.
+
+
+
+```{r, echo = FALSE}
+library(msm)
+library(rsample)
+library(lme4)
+library(broom)
+# Use this to create some plots. 
+p=lm(Time~Bike_Speed+Place1,data=final)
+final %>% ggplot(aes(x=Bike_Speed,y=Time,color=Place1))+
+  geom_point(alpha=0.5)+geom_line(data=augment(p),
+                                  aes(y=.fitted,colour=Place1),lwd=0.5)
+```
+For the occasion that outside of commercial places, we can see its direction is positive, and the strength of it is relatively strong, so it have a linear relationship. From the scatter plot we could see that the x-axis is bike speed, the y-axis is reaction time, so based on the trend of green line, we could see that when the bicycle theft occurred in an occasion outside of the commercial places, the bike speed increases, the reaction time will also become longer.\
+For the occasion that bicycle theft happened inside of commercial places, it's the red line in the scatter plot, it also has a positive direction and the strength of it is very strong, based on the trend of red line, we could see that when the bicycle theft occurred in the commercial places, the bike speed increases, the reaction time will also increase.\
+
+
+
+# Methods
+
+To investigate how will the speed of bicycle and the occasion type affect the time that people find out their bikes were stolen, we have selected 3 variables to build a multiple linear regression model.\
+The dependent variable is time range between occurred time and reported time, while the two independent variables are the speed of bicycle and the occasion type of bicycle theft. 
+
+The multiple linear regression model is
+$$Y_{time}=\beta_0 + \beta_1X_{speed} + \beta_2X_{place}+ \epsilon$$.\ Where$Y_{time}$ represents the reaction time of people when bike theft happened, it's a dependent variable of this linear regression.\
+$X_{speed}$ represents the independent variable for the speed of stolen bicycle.\
+$X_{place}$ represents the independent variable for the occasion of the bicycle theft, it cold be either commercial place or outside of commercial place. The predictor $X_{place}$ equals to 0 if the bicycle theft occurred in commercial place, while it equals to 1 when occurred outside.\
+$\beta_0$ means the expected value of reaction time when bicycle theft occurred in commercial place, when $X_{place}=0$, which is meaningless in this case.\
+$\beta_1$ represents the change of expected value of reaction time $Y_{time}$ for both groups when the predictor speed of bike $X_{speed}$ increase by 1 mile per hour.\
+$\beta_2$ is the difference of reaction time $Y_{time}$ when the bike theft occurred in commercial places v.s. outside of commercial place.\
+$\epsilon$is the error term of the multiple linear regression model.\
+
+A To ensure the multiple linear regression model is appropriate, we will check if 
+it satisfies the following conditions:\
+1)The histogram of $Y_{time}$ is normally distributed. From the data section we can see that the plot of $Y_{time}$ is normally distributed, so the sample size $n=182$ is large enough for analyzing.\
+2)$Y_{time}$ is the calculated result of difference between occurred time and reported time of bicycle theft, thus, we can use the regression model.\
+3)The model has analyzed the relationship between time, speed of bicycle and occasion types. To be more specific, time is how long it took the person to find out his or her bike was stolen, speed of bicycle is the speed of bicycle in the unit of mile per hour, and the occasion type is the occasion that the bicycle theft took place, the theft could happen in either commercial place or outside of the commercial place. From the above description we could find out that time is affected by speed of bicycle and occasion type, therefore time become dependent variable, speed and occasion become independent variable which their increase or decrease will affect the time.\
+Now we need to do a hypothesis test to test if the predicted variable speed of bike $X_{speed}$in the multiple linear regression model has correlation with the response variable $Y_{time}$, with the existence of occasion type $X_{place}$. We want to test the first predictor $X_{speed}$.
+The hypothesis test is as the following:$$H_0:\beta_1=0 v.s.H_a:\beta_1\neq0$$,
+if the p-value is smaller than 0.05, than we have evidence to show the average of reaction time of people in a bike theft that happened outside of the commercial places are lower than the reaction time of people when they are in commercial places.\
+
+## Assumptions
+
+We will use the Gauss Markov Assumption (this assumption can be used in any regression model) to justify the hypothesis test:\
+1) $Var(\epsilon)=\sigma^2$. \
+2)$\epsilon$ is the random variable for the expected value of $\epsilon$, which is $E(\epsilon)=0$.\
+3)The relationship between $\epsilon_i$ and $\epsilon_j$ should be uncorrelated, for $i\neq j$, and $Cov(i,j)=0$.\
+4)The response variable and the predictor variable has linear relationship, and we need to apply Central Limit Theorem to test the multiple linear regression model. And our assumption is: the sample size is large enough, and the samples are independent identically distributed.
+
+\newpage
+
+# Results 
+
+
+```{r,echo = FALSE}
+# Here you can run a linear regression on your two variables of interest.
+#lm(y~x, data = your_data)  # This is for a simple linear regression.
+a1=lm(Time~Bike_Speed+Place1,data=final)
+a=summary(a1)
+knitr::kable(tidy(a1),caption = "Table of Coefficients")
+```
+
+## Explanation of Table
+
+Based on the information on the table we can see that the predictor coefficients we are going to discuss is $\beta_0$,$\beta_1$,$\beta_2$. We will also discuss about the p-value that are related to the hypothesis test.
+
+## Description of Predicted Coefficients
+
+From the table we could see that when the value of bike speed of stolen bike increase by 1 mile per hour, the average of reaction time will increase by 0.1609227 hour, which is around 9.66 minutes when the bike theft occurred outside of the commercial places.\
+When the bike speed increase by 1 mile per hour, the average of reaction time will increase by 4.0634217 hour when the bike theft occurred inside of the commercial places.\
+The above two changes to the expected value of reaction time $Y_{time}$ is related to the coefficient $\beta_1$, since $\beta_1$ represent the change of expected value of reaction time $Y_{time}$ for both groups when the predictor speed of bike $X_{speed}$ increase by 1 mile per hour.So the $\beta_0$ and $\beta_2$ is meaningless in this case, because $\beta_0$ means the expected value of reaction time when bicycle theft occurred in commercial place, which is when $X_{place}=0$; while $\beta_2$ is the difference of reaction time when the bike theft happened in the commercial places v.s. outside of commercial place. Both of these two coefficients does not affect the change of the expected value of reaction time.\
+Now we want to know if the predictor speed of bike $X_{speed}$ has correlation with the reaction time $Y_{time}$, with the presence of another predictor, which is the occasion of bike theft $X_{place}$.\
+For the bicycle theft that occurred outside of the commercial places, we have the following as the predicted mathematical model:
+$$Y_{time}=-4.7296292+0.1609227X_{speed}+4.0634217X_{place}$$
+For the bicycle theft that occured inside of the commercial places, we have the following predicted mathematical model:
+$$Y_{time}=-4.7296292+0.1609227X_{speed}$$
+
+The hypothesis test is as the following:$$H_0:\beta_1=0 v.s.H_a:\beta_1\neq0$$,
+We find out the p-value of bike speed is 0.04012178, which is smaller than 0.05 from the table, then we have strong evidence to show the occasion of bicycle thefts will change the effect of bicycle speed to reaction time of people.Therefore, based on the hypothesis test and the coefficients, our multiple linear regression model is appropriate in our analysis.\
+
+```{r, echo=FALSE}
+
+# Use this to calculate generate a scatterplot of your variables if desired.
+# You can use abline to overlay the scatterplot with the regression line (again, if desired).
+final %>% ggplot(aes(x=Bike_Speed,y=Time,color=Place1))+
+  geom_point(alpha=0.5)+geom_line(data=augment(p),
+                                  aes(y=.fitted,colour=Place1),lwd=0.5)
+```
+
+## Interpretation of the Scatter Plot
+
+We will interpret the scatter plot by 2 different occasions of where the bicycle theft took place. For the occasion that outside of commercial places, we can see its direction is positive, and the strength of it is relatively strong, so it have a linear relationship. From the scatter plot we could see that the x-axis is bike speed, the y-axis is reaction time, so based on the trend of green line, we could see that when the bicycle theft occurred in an occasion outside of the commercial places, the bike speed increases, the reaction time will also become longer. It has the mathematical model as the following:
+$$Y_{time}=-4.7296292+0.1609227X_{speed}+4.0634217X_{place}$$
+For the occasion that bicycle theft happened inside of commercial places, it's the red line in the scatter plot, it also has a positive direction and the strength of it is very strong, based on the trend of red line, we could see that when the bicycle theft occurred in the commercial places, the bike speed increases, the reaction time will also increase. It has the mathematical model as the following:
+$$Y_{time}=-4.7296292+0.1609227X_{speed}$$
+
+# Conclusions
+
+## Summary
+
+We want to investigate the relationship between people's reaction time when bicycles are stolen, the speed of stolen bicycle and and the occasions when bicycle thefts occurred. And we want to investigate if they have linear relationship. We firstly draw a scatter plot of reaction time v.s. bike speed. The bicycle thefts has two occasions: inside of the commercial places and outside of it. It's clear that the time is dependent variable and the bike speed, occasion types are independent variable. But different from the bike speed and reaction time, which are both numerical variable, occasion type is the categorical variable. From the scatter plot we can see that there is a positive linear relationship between time and bike speed, classify by the occasion type which is outside of commercial place and inside of it.\
+Then we used the hypothesis test to test if we need the interaction term that contains both of the independent variables. And we get that we do not need to get the interaction term in the regression model, since from the scatter plot of reaction time v.s. bike speed in two occasions we can see that the two lines are parallel, and they will not affect the tendency of each other.  
+
+
+## Key Results
+
+For the occasion that inside of commercial places,t has the mathematical model as the following:
+$$Y_{time}=-4.7296292+0.1609227X_{speed}$$
+For the occasion that outside of commercial places,t has the mathematical model as the following:
+$$Y_{time}=-4.7296292+0.1609227X_{speed}+4.0634217X_{place}$$
+
+## Big picture
+
+The result tells us that people's reaction time when bicycles are stolen are affected by the speed of stolen bicycle and the occasions when bicycle thefts occurred. This makes sense because when we are in commercial places, we will focus on the things that we are doing right now, and most of the time the bicycle will park in the place that is out of our eyesight. If the speed of bicycle is very fast, then our reaction time may be longer because the faster the speed the longer time we need to discover our bikes are stolen.
+
+## Weaknesses
+
+When we calculated the reaction time there is a time difference of bicycle thefts that may happened in different days, so some of the reaction time appears to be negative, and actually this makes the analyzing more complicated. Another point is when I was analyzing in the hypothesis test, I applied the central limit theorem,  because from the histogram we could see that the plot is normally distributed, but there is still some deviation. What if the small deviation could affect the whole distribution?
+
+## Next Steps
+
+We should pay more attention to the data cleaning part next time, and we will create some new columns that are more appropriate and correlated to the research question.
+
+## Discussion
+From the whole report we could find out the next time if we cycle to the occasion outside, or near the commercial places, we should be more aware of our bicycle parking. If our bicycle is the type of high speed, we could use the U-lock to lock our bicycle properly. Also, we could register our bikes so that next time when we face the bicycle theft, the police could locate the address of our stolen bicycle more conveniently, and the investigation will also be more efficient.
+
+
+\newpage
+
+# Bibliography
+
+1. Grolemund, G. (2014, July 16) *Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/articles_intro.html](https://rmarkdown.rstudio.com/articles_intro.html). (Last Accessed: October 12, 2021) 
+
+2. Dekking, F. M., et al. (2005) *A Modern Introduction to Probability and Statistics: Understanding why and how.* Springer Science & Business Media.
+
+3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: October 12, 2021) 
+
+4. Peter Dalgaard. (2008) *Introductory Statistics with R, 2nd edition*.
+
+5. Toronto Police Services (2021, Mar 23). *Bicycle Thefts.* https://open.toronto.ca/dataset/bicycle-thefts/
+
+6. Simon C., Alex H..(2021, Sep 1) *Tidymodels* https://broom.tidymodels.org/
+
+7. Aschwanden, C (2015-11-24). *Not Even Scientists Can Easily Explain P-values*. https://web.archive.org/web/20190925221600/https://fivethirtyeight.com/features/not-even-scientists-can-easily-explain-p-values/
+
+8. Good, P(2000). *Permutation Tests: A Practical Guide to Resampling Methods for Testing Hypotheses*, 2nd ed. New York: Springer-Verlag, https://www.statisticshowto.com/probability-and-statistics/hypothesis-testing/ 
+
+9. Adam,H(2021). *Multiple Linear Regression* https://www.investopedia.com/terms/m/mlr.asp
+
+10. Lily,H.G.,(2020) *Bike thefts are increasing in Canada: Here's what you can do to protect your bike* https://cyclingmagazine.ca/sections/news/bike-theft-canada/
